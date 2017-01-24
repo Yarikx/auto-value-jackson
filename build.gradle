@@ -1,0 +1,20 @@
+group 'com.yheriatovych'
+version '1.0-SNAPSHOT'
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+    tasks.withType(JavaCompile) { options.fork = true }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
