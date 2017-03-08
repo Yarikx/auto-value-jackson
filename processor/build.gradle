@@ -7,8 +7,6 @@ sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
 
 dependencies {
-    compile project(':annotations')
-
     compile 'com.gabrielittner.auto.value:auto-value-extension-util:0.3.0'
 
     compile 'com.fasterxml.jackson.core:jackson-core:2.8.5'

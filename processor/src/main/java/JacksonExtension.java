@@ -2,19 +2,16 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
+import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.squareup.javapoet.*;
-import com.yheriatovych.auto.jackson.AutoJackson;
 
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.type.DeclaredType;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
 import java.util.Map;
@@ -25,16 +22,12 @@ public class JacksonExtension extends AutoValueExtension {
     public String generateClass(Context context, String className, String classToExtend, boolean isFinal) {
         TypeSpec.Builder builder = AutoValueUtil.newTypeSpecBuilder(context, className, classToExtend, isFinal);
 
-        MethodSpec.Builder serializer = MethodSpec.methodBuilder("serializer")
-                .addModifiers(Modifier.STATIC)
-                .returns(ParameterizedTypeName.get(
-                        ClassName.get(JsonSerializer.class),
-                        ClassName.get(context.autoValueClass())
-                ));
-
+        String serializerName = "JacksonSerializer";
+        String deserializerName = "JacksonDeserializer";
         TypeSpec typeSpec = builder
-                .addType(emitSerializer(context))
-                .addType(emitDeserializer(context))
+                .addType(emitSerializer(context, serializerName))
+                .addType(emitDeserializer(context, deserializerName))
+                .addType(emitModule(context, serializerName, deserializerName))
                 .build();
         return JavaFile.builder(context.packageName(), typeSpec)
                 .skipJavaLangImports(true)
@@ -42,7 +35,21 @@ public class JacksonExtension extends AutoValueExtension {
                 .toString();
     }
 
-    private TypeSpec emitDeserializer(Context context) {
+    private TypeSpec emitModule(Context context, String serializerName, String deserializerName) {
+        TypeElement type = context.autoValueClass();
+        MethodSpec constructor = MethodSpec.constructorBuilder()
+                .addStatement("super($S)", type.getSimpleName())
+                .addStatement("addSerializer($T.class, new $N())", type, serializerName)
+                .addStatement("addDeserializer($T.class, new $N())",type, deserializerName)
+                .build();
+        return TypeSpec.classBuilder("JacksonModule")
+                .superclass(SimpleModule.class)
+                .addModifiers(Modifier.STATIC, Modifier.FINAL)
+                .addMethod(constructor)
+                .build();
+    }
+
+    private TypeSpec emitDeserializer(Context context, String deserializerName) {
         ParameterizedTypeName deserializerType = ParameterizedTypeName.get(
                 ClassName.get(JsonDeserializer.class),
                 ClassName.get(context.autoValueClass())
@@ -95,7 +102,7 @@ public class JacksonExtension extends AutoValueExtension {
         method.addCode("return ");
         method.addCode(AutoValueUtil.newFinalClassConstructorCall(context, properties.keySet().toArray(new Object[properties.size()])));
 
-        return TypeSpec.classBuilder("JacksonDeserializer")
+        return TypeSpec.classBuilder(deserializerName)
                 .superclass(deserializerType)
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
                 .addMethod(method.build())
@@ -130,7 +137,7 @@ public class JacksonExtension extends AutoValueExtension {
         }
     }
 
-    private TypeSpec emitSerializer(Context context) {
+    private TypeSpec emitSerializer(Context context, String serializerName) {
         MethodSpec.Builder method = MethodSpec.methodBuilder("serialize")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(context.autoValueClass()), "value")
@@ -147,7 +154,7 @@ public class JacksonExtension extends AutoValueExtension {
         }
         method.addStatement("gen.writeEndObject()");
 
-        return TypeSpec.classBuilder("JacksonSerializer")
+        return TypeSpec.classBuilder(serializerName)
                 .superclass(ParameterizedTypeName.get(
                         ClassName.get(JsonSerializer.class),
                         ClassName.get(context.autoValueClass())
@@ -159,6 +166,16 @@ public class JacksonExtension extends AutoValueExtension {
 
     @Override
     public boolean applicable(Context context) {
-        return context.autoValueClass().getAnnotation(AutoJackson.class) != null;
+        for (Element element : context.autoValueClass().getEnclosedElements()) {
+            if(element.getKind() == ElementKind.METHOD) {
+                ExecutableElement ee = MoreElements.asExecutable(element);
+                if(ee.getModifiers().contains(Modifier.STATIC)
+                        && ee.getModifiers().contains(Modifier.PUBLIC)
+                        && MoreTypes.isTypeOf(Module.class, ee.getReturnType())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -1,8 +1,8 @@
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.auto.value.AutoValue;
-import com.yheriatovych.auto.jackson.AutoJackson;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,11 +24,13 @@ public class SimpleTest {
     }
 
     @AutoValue
-    @AutoJackson
     static abstract class TestData {
         abstract String foo();
         abstract int bar();
 
+        public static Module jacksonModule() {
+            return new AutoValue_SimpleTest_TestData.JacksonModule();
+        }
         static TestData create(String foo, int bar) {
             return new AutoValue_SimpleTest_TestData(foo, bar);
         }

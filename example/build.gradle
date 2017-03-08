@@ -8,8 +8,6 @@ apply plugin: 'idea'
 sourceCompatibility = 1.8
 
 dependencies {
-    compile project(':annotations')
-
     //TODO REMOVE
     apt 'com.ryanharter.auto.value:auto-value-gson:0.4.6'
     compileOnly 'com.ryanharter.auto.value:auto-value-gson:0.4.6'
