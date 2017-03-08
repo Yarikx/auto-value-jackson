@@ -1,3 +1,5 @@
+package com.yheriatovych.auto.jackson;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;

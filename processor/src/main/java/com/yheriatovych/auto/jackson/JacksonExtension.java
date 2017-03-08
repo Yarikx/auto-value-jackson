@@ -1,3 +1,5 @@
+package com.yheriatovych.auto.jackson;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,8 +14,8 @@ import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.squareup.javapoet.*;
-import model.AutoClass;
-import model.Property;
+import com.yheriatovych.auto.jackson.model.AutoClass;
+import com.yheriatovych.auto.jackson.model.Property;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
@@ -201,7 +203,6 @@ public class JacksonExtension extends AutoValueExtension {
             if(element.getKind() == ElementKind.METHOD) {
                 ExecutableElement ee = MoreElements.asExecutable(element);
                 if(ee.getModifiers().contains(Modifier.STATIC)
-                        && ee.getModifiers().contains(Modifier.PUBLIC)
                         && MoreTypes.isTypeOf(Module.class, ee.getReturnType())) {
                     return true;
                 }

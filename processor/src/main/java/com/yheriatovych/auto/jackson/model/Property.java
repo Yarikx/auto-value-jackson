@@ -1,4 +1,4 @@
-package model;
+package com.yheriatovych.auto.jackson.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;

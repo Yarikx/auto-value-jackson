@@ -1,4 +1,4 @@
-package model;
+package com.yheriatovych.auto.jackson.model;
 
 import com.google.auto.value.extension.AutoValueExtension;
 
