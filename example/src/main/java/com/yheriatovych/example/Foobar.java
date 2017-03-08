@@ -1,5 +1,6 @@
 package com.yheriatovych.example;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.Module;
 import com.google.auto.value.AutoValue;
 import com.google.gson.Gson;
@@ -10,6 +11,7 @@ import java.util.List;
 @AutoValue
 public abstract class Foobar {
 
+    @JsonProperty("custom_foo")
     public abstract String foo();
     public abstract int bar();
     public abstract List<String> items();

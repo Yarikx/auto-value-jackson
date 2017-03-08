@@ -28,9 +28,12 @@ public class JacksonExtension extends AutoValueExtension {
 
         String serializerName = "JacksonSerializer";
         String deserializerName = "JacksonDeserializer";
+
+        AutoClass autoClass = AutoClass.parse(context);
+
         TypeSpec typeSpec = builder
-                .addType(emitSerializer(context, serializerName))
-                .addType(emitDeserializer(context, deserializerName))
+                .addType(emitSerializer(autoClass, serializerName))
+                .addType(emitDeserializer(autoClass, context, deserializerName))
                 .addType(emitModule(context, serializerName, deserializerName))
                 .build();
         return JavaFile.builder(context.packageName(), typeSpec)
@@ -53,10 +56,10 @@ public class JacksonExtension extends AutoValueExtension {
                 .build();
     }
 
-    private TypeSpec emitDeserializer(Context context, String deserializerName) {
+    private TypeSpec emitDeserializer(AutoClass autoClass, Context context, String deserializerName) {
         ParameterizedTypeName deserializerType = ParameterizedTypeName.get(
                 ClassName.get(JsonDeserializer.class),
-                ClassName.get(context.autoValueClass())
+                ClassName.get(autoClass.getTypeElement())
         );
         MethodSpec.Builder method = MethodSpec.methodBuilder("deserialize")
                 .addModifiers(Modifier.PUBLIC)
@@ -64,17 +67,16 @@ public class JacksonExtension extends AutoValueExtension {
                 .addParameter(DeserializationContext.class, "ctxt")
                 .addException(IOException.class)
                 .addException(JsonProcessingException.class)
-                .returns(ClassName.get(context.autoValueClass()));
+                .returns(ClassName.get(autoClass.getTypeElement()));
 
         method.beginControlFlow("if (p.getCurrentToken() == $T.START_OBJECT)", JsonToken.class)
                 .addStatement("p.nextToken()")
                 .endControlFlow();
 
-        Map<String, ExecutableElement> properties = context.properties();
-        for (String key : properties.keySet()) {
-            ExecutableElement executableElement = properties.get(key);
+        for (Property property : autoClass.getProperties()) {
+            ExecutableElement executableElement = property.getMethod();
             TypeMirror returnType = executableElement.getReturnType();
-            method.addStatement("$T $N = $L", returnType, key, getDefault(returnType));
+            method.addStatement("$T $N = $L", returnType, property.getKey(), getDefault(returnType));
         }
 
         //while loop
@@ -85,16 +87,16 @@ public class JacksonExtension extends AutoValueExtension {
             method.addStatement("p.nextToken()");
 
             boolean isFirst = true;
-            for (String key : properties.keySet()) {
+            for (Property property : autoClass.getProperties()) {
                 if (isFirst) {
-                    method.beginControlFlow("if (fieldName.equals($S))", key);
+                    method.beginControlFlow("if (fieldName.equals($S))", property.jsonName());
                 } else {
-                    method.nextControlFlow("else if (fieldName.equals($S))", key);
+                    method.nextControlFlow("else if (fieldName.equals($S))", property.jsonName());
                 }
                 isFirst = false;
 
-                method.addCode("$N = ", key);
-                method.addCode(getGetterForType(properties.get(key).getReturnType()));
+                method.addCode("$N = ", property.getKey());
+                method.addCode(getGetterForType(property.getType()));
                 method.addCode(";\n");
             }
             method.endControlFlow();
@@ -104,7 +106,7 @@ public class JacksonExtension extends AutoValueExtension {
         method.endControlFlow();
 
         method.addCode("return ");
-        method.addCode(AutoValueUtil.newFinalClassConstructorCall(context, properties.keySet().toArray(new Object[properties.size()])));
+        method.addCode(AutoValueUtil.newFinalClassConstructorCall(context, autoClass.allKeys()));
 
         return TypeSpec.classBuilder(deserializerName)
                 .superclass(deserializerType)
@@ -147,24 +149,24 @@ public class JacksonExtension extends AutoValueExtension {
         }
     }
 
-    private TypeSpec emitSerializer(Context context, String serializerName) {
+    private TypeSpec emitSerializer(AutoClass autoClass, String serializerName) {
         MethodSpec.Builder method = MethodSpec.methodBuilder("serializeWithType")
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(ClassName.get(context.autoValueClass()), "value")
+                .addParameter(ClassName.get(autoClass.getTypeElement()), "value")
                 .addParameter(JsonGenerator.class, "gen")
                 .addParameter(SerializerProvider.class, "serializers")
                 .addParameter(TypeSerializer.class, "typeSer")
                 .addException(IOException.class);
 
         method.beginControlFlow("if (typeSer != null)")
-                .addStatement("typeSer.writeTypePrefixForObject(value, gen, $T.class)", context.autoValueClass())
+                .addStatement("typeSer.writeTypePrefixForObject(value, gen, $T.class)", autoClass.getTypeElement())
                 .nextControlFlow("else")
                 .addStatement("gen.writeStartObject()")
                 .endControlFlow();
-        for (String key : context.properties().keySet()) {
-            ExecutableElement element = context.properties().get(key);
-            method.addStatement("gen.writeFieldName($S)", key);
-            method.addStatement("gen.writeObject(value.$N())", key);
+        for (Property property : autoClass.getProperties()) {
+//            ExecutableElement element = property.
+            method.addStatement("gen.writeFieldName($S)", property.jsonName());
+            method.addStatement("gen.writeObject(value.$N())", property.getKey());
         }
         method.beginControlFlow("if (typeSer != null)")
                 .addStatement("typeSer.writeTypeSuffixForObject(value, gen)")
@@ -174,7 +176,7 @@ public class JacksonExtension extends AutoValueExtension {
 
         MethodSpec.Builder simpleSerialize = MethodSpec.methodBuilder("serialize")
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(ClassName.get(context.autoValueClass()), "value")
+                .addParameter(ClassName.get(autoClass.getTypeElement()), "value")
                 .addParameter(JsonGenerator.class, "gen")
                 .addParameter(SerializerProvider.class, "serializers")
                 .addException(IOException.class)
@@ -184,7 +186,7 @@ public class JacksonExtension extends AutoValueExtension {
         return TypeSpec.classBuilder(serializerName)
                 .superclass(ParameterizedTypeName.get(
                         ClassName.get(JsonSerializer.class),
-                        ClassName.get(context.autoValueClass())
+                        ClassName.get(autoClass.getTypeElement())
                 ))
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
                 .addMethod(method.build())
