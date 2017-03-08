@@ -3,6 +3,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
 import com.google.auto.common.MoreElements;
@@ -138,21 +139,38 @@ public class JacksonExtension extends AutoValueExtension {
     }
 
     private TypeSpec emitSerializer(Context context, String serializerName) {
-        MethodSpec.Builder method = MethodSpec.methodBuilder("serialize")
+        MethodSpec.Builder method = MethodSpec.methodBuilder("serializeWithType")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(context.autoValueClass()), "value")
                 .addParameter(JsonGenerator.class, "gen")
                 .addParameter(SerializerProvider.class, "serializers")
-                .addException(IOException.class)
-                .addException(JsonProcessingException.class);
+                .addParameter(TypeSerializer.class, "typeSer")
+                .addException(IOException.class);
 
-        method.addStatement("gen.writeStartObject()");
+        method.beginControlFlow("if (typeSer != null)")
+                .addStatement("typeSer.writeTypePrefixForObject(value, gen, $T.class)", context.autoValueClass())
+                .nextControlFlow("else")
+                .addStatement("gen.writeStartObject()")
+                .endControlFlow();
         for (String key : context.properties().keySet()) {
             ExecutableElement element = context.properties().get(key);
             method.addStatement("gen.writeFieldName($S)", key);
             method.addStatement("gen.writeObject(value.$N())", key);
         }
-        method.addStatement("gen.writeEndObject()");
+        method.beginControlFlow("if (typeSer != null)")
+                .addStatement("typeSer.writeTypeSuffixForObject(value, gen)")
+                .nextControlFlow("else")
+                .addStatement("gen.writeEndObject()")
+                .endControlFlow();
+
+        MethodSpec.Builder simpleSerialize = MethodSpec.methodBuilder("serialize")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(ClassName.get(context.autoValueClass()), "value")
+                .addParameter(JsonGenerator.class, "gen")
+                .addParameter(SerializerProvider.class, "serializers")
+                .addException(IOException.class)
+                .addException(JsonProcessingException.class)
+                .addStatement("this.serializeWithType(value, gen, serializers, null)");
 
         return TypeSpec.classBuilder(serializerName)
                 .superclass(ParameterizedTypeName.get(
@@ -161,6 +179,7 @@ public class JacksonExtension extends AutoValueExtension {
                 ))
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
                 .addMethod(method.build())
+                .addMethod(simpleSerialize.build())
                 .build();
     }
 

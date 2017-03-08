@@ -49,4 +49,5 @@ public class SimpleTest {
         String json = "{\"foo\":\"test\",\"bar\":4}";
         assertEquals(expected, mapper.readValue(json, TestData.class));
     }
+
 }
