@@ -1,4 +1,5 @@
 rootProject.name = 'auto-jackson'
 include 'processor'
 include 'example'
+include 'annotations'
 
