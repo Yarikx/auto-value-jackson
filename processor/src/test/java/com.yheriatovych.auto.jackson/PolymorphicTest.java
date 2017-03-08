@@ -19,13 +19,11 @@ public class PolymorphicTest {
             use = JsonTypeInfo.Id.NAME,
             include = JsonTypeInfo.As.PROPERTY,
             property = "type")
-    @JsonSubTypes(
-            {
+    @JsonSubTypes({
                     @JsonSubTypes.Type(value = Dog.class),
                     @JsonSubTypes.Type(value = Cat.class),
                     @JsonSubTypes.Type(value = Bird.class),
-            }
-    )
+    })
     interface Animal {}
 
     @JsonTypeName("dog")

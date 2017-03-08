@@ -23,7 +23,7 @@ public class SimpleTest {
     }
 
     @AutoValue
-    static abstract class TestData {
+    protected static abstract class TestData {
         abstract String foo();
         abstract int bar();
 
