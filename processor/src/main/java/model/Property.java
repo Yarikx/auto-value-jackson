@@ -1,3 +1,5 @@
+package model;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 
@@ -5,12 +7,12 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.type.TypeMirror;
 
 public class Property {
-    final String key;
-    final ExecutableElement executableElement;
+    private final String key;
+    private final ExecutableElement executableElement;
     @Nullable
-    final String customJsonName;
+    private final String customJsonName;
 
-    public String getKey() {
+    public String key() {
         return key;
     }
 
@@ -37,11 +39,11 @@ public class Property {
         return new Property(key, executableElement, customName);
     }
 
-    public ExecutableElement getMethod() {
+    public ExecutableElement method() {
         return executableElement;
     }
 
-    public TypeMirror getType() {
+    public TypeMirror type() {
         return executableElement.getReturnType();
     }
 }

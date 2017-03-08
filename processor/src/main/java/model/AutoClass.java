@@ -1,6 +1,7 @@
+package model;
+
 import com.google.auto.value.extension.AutoValueExtension;
 
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public class AutoClass {
         String[] keys = new String[properties.size()];
         for (int i = 0; i < properties.size(); i++) {
             Property property = properties.get(i);
-            keys[i] = property.getKey();
+            keys[i] = property.key();
         }
         return keys;
     }

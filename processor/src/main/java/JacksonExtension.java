@@ -12,13 +12,14 @@ import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.squareup.javapoet.*;
+import model.AutoClass;
+import model.Property;
 
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
-import java.util.Map;
 
 @AutoService(AutoValueExtension.class)
 public class JacksonExtension extends AutoValueExtension {
@@ -74,9 +75,9 @@ public class JacksonExtension extends AutoValueExtension {
                 .endControlFlow();
 
         for (Property property : autoClass.getProperties()) {
-            ExecutableElement executableElement = property.getMethod();
+            ExecutableElement executableElement = property.method();
             TypeMirror returnType = executableElement.getReturnType();
-            method.addStatement("$T $N = $L", returnType, property.getKey(), getDefault(returnType));
+            method.addStatement("$T $N = $L", returnType, property.key(), getDefault(returnType));
         }
 
         //while loop
@@ -95,8 +96,8 @@ public class JacksonExtension extends AutoValueExtension {
                 }
                 isFirst = false;
 
-                method.addCode("$N = ", property.getKey());
-                method.addCode(getGetterForType(property.getType()));
+                method.addCode("$N = ", property.key());
+                method.addCode(getGetterForType(property.type()));
                 method.addCode(";\n");
             }
             method.endControlFlow();
@@ -166,7 +167,7 @@ public class JacksonExtension extends AutoValueExtension {
         for (Property property : autoClass.getProperties()) {
 //            ExecutableElement element = property.
             method.addStatement("gen.writeFieldName($S)", property.jsonName());
-            method.addStatement("gen.writeObject(value.$N())", property.getKey());
+            method.addStatement("gen.writeObject(value.$N())", property.key());
         }
         method.beginControlFlow("if (typeSer != null)")
                 .addStatement("typeSer.writeTypeSuffixForObject(value, gen)")
