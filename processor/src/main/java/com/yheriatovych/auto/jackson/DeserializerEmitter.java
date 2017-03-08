@@ -51,20 +51,22 @@ public class DeserializerEmitter {
             method.addStatement("String fieldName = p.getCurrentName()");
             method.addStatement("p.nextToken()");
 
-            boolean isFirst = true;
-            for (Property property : autoClass.getProperties()) {
-                if (isFirst) {
-                    method.beginControlFlow("if (fieldName.equals($S))", property.jsonName());
-                } else {
-                    method.nextControlFlow("else if (fieldName.equals($S))", property.jsonName());
-                }
-                isFirst = false;
+            if (!autoClass.getProperties().isEmpty()) {
+                boolean isFirst = true;
+                for (Property property : autoClass.getProperties()) {
+                    if (isFirst) {
+                        method.beginControlFlow("if (fieldName.equals($S))", property.jsonName());
+                    } else {
+                        method.nextControlFlow("else if (fieldName.equals($S))", property.jsonName());
+                    }
+                    isFirst = false;
 
-                method.addCode("$N = ", property.key());
-                method.addCode(getGetterForType(property.type()));
-                method.addCode(";\n");
+                    method.addCode("$N = ", property.key());
+                    method.addCode(getGetterForType(property.type()));
+                    method.addCode(";\n");
+                }
+                method.endControlFlow();
             }
-            method.endControlFlow();
 
             method.addStatement("p.nextToken()");
         }

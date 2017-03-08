@@ -31,7 +31,6 @@ public class SerializerEmitter {
                 .addStatement("gen.writeStartObject()")
                 .endControlFlow();
         for (Property property : autoClass.getProperties()) {
-//            ExecutableElement element = property.
             method.addStatement("gen.writeFieldName($S)", property.jsonName());
             method.addStatement("gen.writeObject(value.$N())", property.key());
         }
