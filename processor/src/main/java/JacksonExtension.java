@@ -2,6 +2,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -13,6 +14,8 @@ import com.google.auto.value.extension.AutoValueExtension;
 import com.squareup.javapoet.*;
 
 import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
 import java.util.Map;
@@ -113,7 +116,14 @@ public class JacksonExtension extends AutoValueExtension {
     private CodeBlock getGetterForType(TypeMirror returnType) {
         switch (returnType.getKind()) {
             default:
-
+                if(returnType.getKind() == TypeKind.DECLARED) {
+                    DeclaredType declaredType = MoreTypes.asDeclared(returnType);
+                    if(declaredType.getTypeArguments().size() == 0) {
+                        return CodeBlock.of("p.readValueAs($T.class)", returnType);
+                    } else {
+                        return CodeBlock.of("p.readValueAs(new $T<$T>(){})", TypeReference.class, returnType);
+                    }
+                }
                 return CodeBlock.of("p.readValueAs($T.class)", returnType);
         }
     }
@@ -127,12 +137,11 @@ public class JacksonExtension extends AutoValueExtension {
             case SHORT:
             case INT:
             case LONG:
+            case FLOAT:
+            case DOUBLE:
                 return "0";
             case CHAR:
                 return "'\0'";
-            case FLOAT:
-            case DOUBLE:
-                return "0.";
             default:
                 return "null";
         }

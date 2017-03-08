@@ -4,16 +4,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class Main {
 
     public static void main(String[] args) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        SimpleModule module = new SimpleModule();
-        mapper.registerModule(module);
+        mapper.registerModule(Foobar.jacksonModule());
 
-        String json = "{\"foo\":\"test\",\"bar\":4}";
-        Foobar foobar = mapper.readValue(json, Foobar.class);
-        System.out.println(foobar);
+        Foobar foobar = Foobar.builder()
+                .foo("foo")
+                .bar(42)
+                .items(Arrays.asList("foo", "bar"))
+                .build();
+
+        String json = mapper.writeValueAsString(foobar);
+        System.out.println(json);
+        Foobar readed = mapper.readValue(json, Foobar.class);
+        System.out.println(readed);
     }
 }

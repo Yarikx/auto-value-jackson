@@ -5,16 +5,20 @@ import com.google.auto.value.AutoValue;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 
+import java.util.List;
+
 @AutoValue
 public abstract class Foobar {
 
     public abstract String foo();
     public abstract int bar();
+    public abstract List<String> items();
 
-    public static Foobar create(String foo, int bar) {
+    public static Foobar create(String foo, int bar, List<String> items) {
         return builder()
                 .foo(foo)
                 .bar(bar)
+                .items(items)
                 .build();
     }
 
@@ -35,6 +39,8 @@ public abstract class Foobar {
         public abstract Builder foo(String foo);
 
         public abstract Builder bar(int bar);
+
+        public abstract Builder items(List<String> items);
 
         public abstract Foobar build();
     }
