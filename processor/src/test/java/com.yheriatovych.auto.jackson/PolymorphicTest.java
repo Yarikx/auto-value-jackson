@@ -1,11 +1,8 @@
 package com.yheriatovych.auto.jackson;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.value.AutoValue;
@@ -21,7 +18,6 @@ public class PolymorphicTest {
     @JsonTypeInfo(
             use = JsonTypeInfo.Id.NAME,
             include = JsonTypeInfo.As.PROPERTY,
-//            visible = true,
             property = "type")
     @JsonSubTypes(
             {
@@ -41,10 +37,10 @@ public class PolymorphicTest {
     @JsonTypeName("bird")
     static abstract class Bird implements Animal {
         @Nullable
-        public abstract String foobar();
+        public abstract String name();
 
-        public static Bird create(String foobar) {
-            return new AutoValue_PolymorphicTest_Bird(foobar);
+        public static Bird create(String name) {
+            return new AutoValue_PolymorphicTest_Bird(name);
         }
 
         public static Module birdModule() {
@@ -57,8 +53,6 @@ public class PolymorphicTest {
     @Before
     public void setup() {
         mapper = new ObjectMapper();
-        mapper.enable(JsonGenerator.Feature.IGNORE_UNKNOWN);
-        mapper.enable(JsonParser.Feature.IGNORE_UNDEFINED);
         mapper.registerModule(Bird.birdModule());
     }
 
@@ -95,19 +89,17 @@ public class PolymorphicTest {
 
     @Test
     public void simpleDeserializeBird() throws IOException {
-        String json = "{\"type\":\"bird\", \"foobar\":\"qwe\"}";
+        String json = "{\"type\":\"bird\", \"name\":\"qwe\"}";
         Animal animal = mapper.readValue(json, Bird.class);
 
         Assert.assertEquals(Bird.create("qwe"), animal);
-        Assert.assertTrue(Bird.class.isAssignableFrom(animal.getClass()));
-        Assert.assertTrue(AutoValue_PolymorphicTest_Bird.class.isAssignableFrom(animal.getClass()));
     }
 
     @Test
     public void simpleSerializeBird() throws IOException {
         Bird bird = Bird.create("qwe");
         String json = mapper.writeValueAsString(bird);
-        String expected = "{\"type\":\"bird\",\"foobar\":\"qwe\"}";
+        String expected = "{\"type\":\"bird\",\"name\":\"qwe\"}";
         Assert.assertEquals(expected, json);
     }
 }

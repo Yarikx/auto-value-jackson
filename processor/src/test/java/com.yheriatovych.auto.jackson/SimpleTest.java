@@ -19,10 +19,7 @@ public class SimpleTest {
     @Before
     public void setUp() {
         mapper = new ObjectMapper();
-        SimpleModule module = new SimpleModule("test");
-        module.addSerializer(TestData.class, new AutoValue_SimpleTest_TestData.JacksonSerializer());
-        module.addDeserializer(TestData.class, new AutoValue_SimpleTest_TestData.JacksonDeserializer());
-        mapper.registerModule(module);
+        mapper.registerModule(TestData.jacksonModule());
     }
 
     @AutoValue
@@ -30,7 +27,7 @@ public class SimpleTest {
         abstract String foo();
         abstract int bar();
 
-        public static Module jacksonModule() {
+        static Module jacksonModule() {
             return new AutoValue_SimpleTest_TestData.JacksonModule();
         }
         static TestData create(String foo, int bar) {

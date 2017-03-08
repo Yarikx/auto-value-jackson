@@ -23,13 +23,13 @@ public class EmptyClassTest {
         }
     }
 
+    private ObjectMapper mapper;
+
     @Before
     public void setup(){
         mapper = new ObjectMapper();
         mapper.registerModule(EmptyData.module());
     }
-
-    private ObjectMapper mapper;
 
     @Test
     public void serializeEmpty() throws JsonProcessingException {
