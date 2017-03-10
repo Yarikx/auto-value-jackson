@@ -27,6 +27,7 @@ public abstract class Foobar {
     public static TypeAdapter<Foobar> typeAdapter(Gson gson) {
         return new AutoValue_Foobar.GsonTypeAdapter(gson);
     }
+
     public static Module jacksonModule() {
         return new AutoValue_Foobar.JacksonModule();
     }
