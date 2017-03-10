@@ -12,6 +12,7 @@ import com.google.auto.value.extension.AutoValueExtension;
 import com.squareup.javapoet.*;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
+import org.jetbrains.annotations.NotNull;
 
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -44,7 +45,7 @@ public class DeserializerEmitter {
         for (Property property : autoClass.getProperties()) {
             ExecutableElement executableElement = property.method();
             TypeMirror returnType = executableElement.getReturnType();
-            method.addStatement("$T $N = $L", returnType, property.key(), property.key() + "Default");
+            method.addStatement("$T $N = $L", returnType, property.key(), getDefaultVarName(property.key()));
         }
 
         //while loop
@@ -90,10 +91,10 @@ public class DeserializerEmitter {
     private static Iterable<MethodSpec> emitDefaultSetters(AutoClass autoClass, String deserializerName) {
         List<MethodSpec> specs = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
-            MethodSpec setter = MethodSpec.methodBuilder("set" + capitalizeFirst(property.key()) + "Default")
+            MethodSpec setter = MethodSpec.methodBuilder(getDefaultSetterName(property))
                     .returns(ClassName.bestGuess(deserializerName))
                     .addParameter(TypeName.get(property.type()), property.key())
-                    .addStatement("this.$N = $N", property.key() + "Default", property.key())
+                    .addStatement("this.$N = $N", getDefaultVarName(property.key()), property.key())
                     .addStatement("return this")
                     .build();
             specs.add(setter);
@@ -104,7 +105,7 @@ public class DeserializerEmitter {
     private static Iterable<FieldSpec> emitDefaultFields(AutoClass autoClass) {
         List<FieldSpec> fields = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
-            FieldSpec field = FieldSpec.builder(TypeName.get(property.type()), property.key() + "Default", Modifier.PRIVATE)
+            FieldSpec field = FieldSpec.builder(TypeName.get(property.type()), getDefaultVarName(property.key()), Modifier.PRIVATE)
                     .build();
             fields.add(field);
         }
@@ -126,28 +127,18 @@ public class DeserializerEmitter {
         }
     }
 
-    private static String getDefault(TypeMirror returnType) {
-        switch (returnType.getKind()) {
-
-            case BOOLEAN:
-                return "false";
-            case BYTE:
-            case SHORT:
-            case INT:
-            case LONG:
-            case FLOAT:
-            case DOUBLE:
-                return "0";
-            case CHAR:
-                return "'\0'";
-            default:
-                return "null";
-        }
-    }
-
     private static String capitalizeFirst(String str) {
         //TODO properly handle unicode code points
         char first = Character.toUpperCase(str.charAt(0));
         return first + str.substring(1);
+    }
+
+    @NotNull
+    private static String getDefaultSetterName(Property property) {
+        return "set" + capitalizeFirst(getDefaultVarName(property.key()));
+    }
+
+    private static String getDefaultVarName(String property) {
+        return "default" + capitalizeFirst(property);
     }
 }
