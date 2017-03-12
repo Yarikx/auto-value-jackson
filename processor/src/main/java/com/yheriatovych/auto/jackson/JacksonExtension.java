@@ -1,7 +1,6 @@
 package com.yheriatovych.auto.jackson;
 
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
@@ -41,7 +40,7 @@ public class JacksonExtension extends AutoValueExtension {
         TypeSpec typeSpec = builder
                 .addType(SerializerEmitter.emitSerializer(autoClass, serializerName))
                 .addType(DeserializerEmitter.emitDeserializer(autoClass, context, deserializerName))
-                .addType(emitModule(context, serializerName, deserializerName, moduleName))
+                .addType(ModuleEmitter.emitModule(autoClass, serializerName, deserializerName, moduleName))
                 .build();
         return JavaFile.builder(context.packageName(), typeSpec)
                 .skipJavaLangImports(true)
@@ -49,17 +48,4 @@ public class JacksonExtension extends AutoValueExtension {
                 .toString();
     }
 
-    private TypeSpec emitModule(Context context, String serializerName, String deserializerName, String moduleName) {
-        TypeElement type = context.autoValueClass();
-        MethodSpec constructor = MethodSpec.constructorBuilder()
-                .addStatement("super($S)", type.getSimpleName())
-                .addStatement("addSerializer($T.class, new $N())", type, serializerName)
-                .addStatement("addDeserializer($T.class, new $N())",type, deserializerName)
-                .build();
-        return TypeSpec.classBuilder(moduleName)
-                .superclass(SimpleModule.class)
-                .addModifiers(Modifier.STATIC, Modifier.FINAL)
-                .addMethod(constructor)
-                .build();
-    }
 }
