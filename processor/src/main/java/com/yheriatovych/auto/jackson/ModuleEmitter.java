@@ -25,7 +25,7 @@ public class ModuleEmitter {
                 .superclass(SimpleModule.class)
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
                 .addMethod(constructor)
-                .addMethods(emitDefaultSetter(autoClass))
+//                .addMethods(emitDefaultSetters(autoClass, deserializerName))
                 .build();
     }
 
