@@ -16,11 +16,14 @@ class DeserializerDispatcher {
 
     private final DeserStrategy[] strategies = new DeserStrategy[]{
             primitive(TypeKind.BOOLEAN, "_parseBooleanPrimitive(p, ctxt)"),
+            primitive(TypeKind.BYTE, "_parseBytePrimitive(p, ctxt)"),
+            primitive(TypeKind.SHORT, "_parseShortPrimitive(p, ctxt)"),
             primitive(TypeKind.INT, "_parseIntPrimitive(p, ctxt)"),
             primitive(TypeKind.LONG, "_parseLongPrimitive(p, ctxt)"),
             primitive(TypeKind.FLOAT, "_parseFloatPrimitive(p, ctxt)"),
             primitive(TypeKind.DOUBLE, "_parseDoublePrimitive(p, ctxt)"),
             classStrategy(String.class, "_parseString(p, ctxt)"),
+            classStrategy(Short.class, "_parseShort(p, ctxt)"),
             classStrategy(Integer.class, "_parseInteger(p, ctxt)"),
             classStrategy(Long.class, "_parseLong(p, ctxt)"),
             classStrategy(Float.class, "_parseFloat(p, ctxt)"),
