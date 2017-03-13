@@ -1,4 +1,4 @@
-package com.yheriatovych.auto.jackson;
+package com.yheriatovych.auto.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,7 +16,7 @@ import javax.lang.model.element.Modifier;
 import java.io.IOException;
 
 public class SerializerEmitter {
-    static TypeSpec emitSerializer(AutoClass autoClass, String serializerName) {
+    public static TypeSpec emitSerializer(AutoClass autoClass, String serializerName) {
         MethodSpec.Builder method = MethodSpec.methodBuilder("serializeWithType")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(autoClass.getTypeElement()), "value")

@@ -1,15 +1,21 @@
 package com.yheriatovych.auto.jackson;
 
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.Module;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.TypeSpec;
+import com.yheriatovych.auto.jackson.deserializer.DeserializerEmitter;
 import com.yheriatovych.auto.jackson.model.AutoClass;
+import com.yheriatovych.auto.jackson.serializer.SerializerEmitter;
 
-import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 
 @AutoService(AutoValueExtension.class)
 public class JacksonExtension extends AutoValueExtension {

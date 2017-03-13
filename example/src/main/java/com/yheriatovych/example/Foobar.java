@@ -16,16 +16,7 @@ public abstract class Foobar {
     public abstract int bar();
     public abstract List<String> items();
     public abstract boolean wtf();
-
-    public static Foobar create(String foo, int bar, List<String> items, boolean wtf) {
-        return builder()
-                .foo(foo)
-                .bar(bar)
-                .items(items)
-                .wtf(wtf)
-                .build();
-    }
-
+    
     public static TypeAdapter<Foobar> typeAdapter(Gson gson) {
         return new AutoValue_Foobar.GsonTypeAdapter(gson);
     }
