@@ -16,6 +16,7 @@ public class Main {
                 .foo("foo")
                 .bar(42)
                 .items(Arrays.asList("foo", "bar"))
+                .wtf(true)
                 .build();
 
         String json = mapper.writeValueAsString(foobar);

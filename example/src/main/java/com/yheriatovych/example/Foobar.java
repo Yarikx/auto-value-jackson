@@ -15,12 +15,14 @@ public abstract class Foobar {
     public abstract String foo();
     public abstract int bar();
     public abstract List<String> items();
+    public abstract boolean wtf();
 
-    public static Foobar create(String foo, int bar, List<String> items) {
+    public static Foobar create(String foo, int bar, List<String> items, boolean wtf) {
         return builder()
                 .foo(foo)
                 .bar(bar)
                 .items(items)
+                .wtf(wtf)
                 .build();
     }
 
@@ -44,6 +46,8 @@ public abstract class Foobar {
         public abstract Builder bar(int bar);
 
         public abstract Builder items(List<String> items);
+
+        public abstract Builder wtf(boolean wtf);
 
         public abstract Foobar build();
     }
