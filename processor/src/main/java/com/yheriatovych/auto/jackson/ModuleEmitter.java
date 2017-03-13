@@ -1,10 +1,7 @@
 package com.yheriatovych.auto.jackson;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.*;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 
@@ -16,26 +13,35 @@ import java.util.List;
 public class ModuleEmitter {
     static TypeSpec emitModule(AutoClass autoClass, String serializerName, String deserializerName, String moduleName) {
         TypeElement type = autoClass.getTypeElement();
+
+        ClassName deserializerClass = ClassName.bestGuess(deserializerName);
+        FieldSpec deserializerField = FieldSpec.builder(deserializerClass, "deserializer", Modifier.PRIVATE, Modifier.FINAL)
+                .build();
+
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addStatement("super($S)", type.getSimpleName())
+                .addStatement("deserializer = new $T()", deserializerClass)
                 .addStatement("addSerializer($T.class, new $N())", type, serializerName)
-                .addStatement("addDeserializer($T.class, new $N())",type, deserializerName)
+                .addStatement("addDeserializer($T.class, deserializer)",type)
                 .build();
         return TypeSpec.classBuilder(moduleName)
                 .superclass(SimpleModule.class)
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
+                .addField(deserializerField)
                 .addMethod(constructor)
-//                .addMethods(emitDefaultSetters(autoClass, deserializerName))
+                .addMethods(emitDefaultSetters(autoClass, moduleName))
                 .build();
     }
 
-    private static Iterable<MethodSpec> emitDefaultSetters(AutoClass autoClass, String deserializerName) {
+    private static Iterable<MethodSpec> emitDefaultSetters(AutoClass autoClass, String moduleName) {
         List<MethodSpec> specs = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
-            MethodSpec setter = MethodSpec.methodBuilder(Utils.getDefaultSetterName(property))
-                    .returns(ClassName.bestGuess(deserializerName))
-                    .addParameter(TypeName.get(property.type()), property.key())
-                    .addStatement("this.$N = $N", Utils.getDefaultVarName(property.key()), property.key())
+            String methodName = Utils.getDefaultSetterName(property);
+            String argName = property.key();
+            MethodSpec setter = MethodSpec.methodBuilder(methodName)
+                    .returns(ClassName.bestGuess(moduleName))
+                    .addParameter(TypeName.get(property.type()), argName)
+                    .addStatement("deserializer.$N($N)", methodName, argName)
                     .addStatement("return this")
                     .build();
             specs.add(setter);
