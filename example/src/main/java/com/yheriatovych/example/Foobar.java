@@ -6,6 +6,7 @@ import com.google.auto.value.AutoValue;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 
+import java.util.Date;
 import java.util.List;
 
 @AutoValue
@@ -16,7 +17,8 @@ public abstract class Foobar {
     public abstract int bar();
     public abstract List<String> items();
     public abstract boolean wtf();
-    
+    public abstract Date timestamp();
+
     public static TypeAdapter<Foobar> typeAdapter(Gson gson) {
         return new AutoValue_Foobar.GsonTypeAdapter(gson);
     }
@@ -39,6 +41,8 @@ public abstract class Foobar {
         public abstract Builder items(List<String> items);
 
         public abstract Builder wtf(boolean wtf);
+
+        public abstract Builder timestamp(Date timestamp);
 
         public abstract Foobar build();
     }

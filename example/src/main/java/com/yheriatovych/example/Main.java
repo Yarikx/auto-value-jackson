@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 
 public class Main {
 
@@ -17,6 +18,7 @@ public class Main {
                 .bar(42)
                 .items(Arrays.asList("foo", "bar"))
                 .wtf(true)
+                .timestamp(new Date())
                 .build();
 
         String json = mapper.writeValueAsString(foobar);

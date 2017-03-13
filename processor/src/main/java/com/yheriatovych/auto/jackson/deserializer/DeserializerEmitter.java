@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DeserializerEmitter {
+
     public static TypeSpec emitDeserializer(AutoClass autoClass, AutoValueExtension.Context context, String deserializerName) {
+        DeserializerDispatcher deserializerDispatcher = new DeserializerDispatcher();
         ParameterizedTypeName deserializerType = ParameterizedTypeName.get(
                 ClassName.get(StdDeserializer.class),
                 ClassName.get(autoClass.getTypeElement())
@@ -66,7 +68,7 @@ public class DeserializerEmitter {
                     isFirst = false;
 
                     method.addCode("$N = ", property.key());
-                    method.addCode(getGetterForType(property.type()));
+                    method.addCode(deserializerDispatcher.deser(property.type()));
                     method.addCode(";\n");
                 }
                 method.endControlFlow();
@@ -111,11 +113,6 @@ public class DeserializerEmitter {
             fields.add(field);
         }
         return fields;
-    }
-
-    private static CodeBlock getGetterForType(TypeMirror type) {
-        return new DeserializerDispatcher()
-                .deser(type);
     }
 
 }

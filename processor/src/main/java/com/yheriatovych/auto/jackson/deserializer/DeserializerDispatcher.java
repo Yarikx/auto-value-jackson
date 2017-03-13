@@ -7,6 +7,7 @@ import com.squareup.javapoet.CodeBlock;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import java.util.Date;
 
 class DeserializerDispatcher {
     interface DeserStrategy {
@@ -17,11 +18,18 @@ class DeserializerDispatcher {
             primitive(TypeKind.BOOLEAN, "_parseBooleanPrimitive(p, ctxt)"),
             primitive(TypeKind.INT, "_parseIntPrimitive(p, ctxt)"),
             primitive(TypeKind.LONG, "_parseLongPrimitive(p, ctxt)"),
+            primitive(TypeKind.FLOAT, "_parseFloatPrimitive(p, ctxt)"),
+            primitive(TypeKind.DOUBLE, "_parseDoublePrimitive(p, ctxt)"),
             classStrategy(String.class, "_parseString(p, ctxt)"),
+            classStrategy(Integer.class, "_parseInteger(p, ctxt)"),
+            classStrategy(Long.class, "_parseLong(p, ctxt)"),
+            classStrategy(Float.class, "_parseFloat(p, ctxt)"),
+            classStrategy(Double.class, "_parseDouble(p, ctxt)"),
+            classStrategy(Date.class, "_parseDate(p, ctxt)"),
             fallbackStrategy()
     };
 
-    private DeserStrategy classStrategy(final Class<String> clazz, final String method) {
+    private DeserStrategy classStrategy(final Class<?> clazz, final String method) {
         return new DeserStrategy() {
             @Override
             public CodeBlock deser(TypeMirror type) {
