@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.*;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 
@@ -17,6 +14,7 @@ import java.io.IOException;
 
 public class SerializerEmitter {
     public static TypeSpec emitSerializer(AutoClass autoClass, String serializerName) {
+        SerializerDispatcher serializerDispatcher = new SerializerDispatcher();
         MethodSpec.Builder method = MethodSpec.methodBuilder("serializeWithType")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(autoClass.getTypeElement()), "value")
@@ -32,7 +30,8 @@ public class SerializerEmitter {
                 .endControlFlow();
         for (Property property : autoClass.getProperties()) {
             method.addStatement("gen.writeFieldName($S)", property.jsonName());
-            method.addStatement("gen.writeObject(value.$N())", property.key());
+            method.addCode(serializerDispatcher.serialize(property));
+            method.addCode(";\n");
         }
         method.beginControlFlow("if (typeSer != null)")
                 .addStatement("typeSer.writeTypeSuffixForObject(value, gen)")
@@ -59,4 +58,5 @@ public class SerializerEmitter {
                 .addMethod(simpleSerialize.build())
                 .build();
     }
+
 }

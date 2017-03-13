@@ -12,7 +12,7 @@ import java.util.List;
 @AutoValue
 public abstract class Foobar {
 
-    @JsonProperty("custom_foo")
+    @JsonProperty("custom_foo") 
     public abstract String foo();
     public abstract int bar();
     public abstract List<String> items();

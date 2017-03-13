@@ -20,6 +20,7 @@ public class Main {
                 .wtf(true)
                 .timestamp(new Date())
                 .build();
+        System.out.println(foobar);
 
         String json = mapper.writeValueAsString(foobar);
         System.out.println(json);
