@@ -71,7 +71,11 @@ public class DeserializerEmitter {
                     method.addCode(deserializerDispatcher.deser(property.type()));
                     method.addCode(";\n");
                 }
-                method.endControlFlow();
+                method.nextControlFlow("else")
+                        .addStatement("p.skipChildren()")
+                        .endControlFlow();
+            } else {
+                //TODO corner case handling
             }
 
             method.addStatement("p.nextToken()");

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.value.AutoValue;
+import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +41,19 @@ public class EmptyClassTest {
     @Test
     public void deserializeEmpty() throws IOException {
         EmptyData emptyData = mapper.readValue("{}", EmptyData.class);
+        Assert.assertEquals(EmptyData.create(), emptyData);
+    }
+
+    @Test
+    public void deserializeEmptyWithIgnoredValues() throws IOException {
+        @Language("JSON") String json = "{\n" +
+                "  \"foo\": 42,\n" +
+                "  \"bar\": {\n" +
+                "    \"a\": \"a\",\n" +
+                "    \"b\": 3\n" +
+                "  }\n" +
+                "}";
+        EmptyData emptyData = mapper.readValue(json, EmptyData.class);
         Assert.assertEquals(EmptyData.create(), emptyData);
     }
 }
