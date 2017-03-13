@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.extension.AutoValueExtension;
@@ -25,9 +26,13 @@ import java.util.List;
 public class DeserializerEmitter {
     static TypeSpec emitDeserializer(AutoClass autoClass, AutoValueExtension.Context context, String deserializerName) {
         ParameterizedTypeName deserializerType = ParameterizedTypeName.get(
-                ClassName.get(JsonDeserializer.class),
+                ClassName.get(StdDeserializer.class),
                 ClassName.get(autoClass.getTypeElement())
         );
+
+        MethodSpec constructor = MethodSpec.constructorBuilder()
+                .addStatement("super($T.class)", autoClass.getTypeElement())
+                .build();
         MethodSpec.Builder method = MethodSpec.methodBuilder("deserialize")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(JsonParser.class, "p")
@@ -81,6 +86,7 @@ public class DeserializerEmitter {
         return TypeSpec.classBuilder(deserializerName)
                 .superclass(deserializerType)
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
+                .addMethod(constructor)
                 .addFields(emitDefaultFields(autoClass))
                 .addMethods(emitDefaultSetters(autoClass, deserializerName))
                 .addMethod(method.build())
@@ -113,8 +119,13 @@ public class DeserializerEmitter {
 
     private static CodeBlock getGetterForType(TypeMirror returnType) {
         switch (returnType.getKind()) {
+            case INT:
+                return CodeBlock.of("_parseIntPrimitive(p, ctxt)");
             default:
                 if(returnType.getKind() == TypeKind.DECLARED) {
+                    if(MoreTypes.isTypeOf(String.class, returnType)) {
+                        return CodeBlock.of("_parseString(p, ctxt)");
+                    }
                     DeclaredType declaredType = MoreTypes.asDeclared(returnType);
                     if(declaredType.getTypeArguments().size() == 0) {
                         return CodeBlock.of("p.readValueAs($T.class)", returnType);
