@@ -47,7 +47,7 @@ public class DeserializerEmitter {
         for (Property property : autoClass.getProperties()) {
             ExecutableElement executableElement = property.method();
             TypeMirror returnType = executableElement.getReturnType();
-            method.addStatement("$T $N = $L", returnType, property.key(), Utils.getDefaultVarName(property.key()));
+            method.addStatement("$T $N = $L", returnType, property.name(), Utils.getDefaultVarName(property.name()));
         }
 
         //while loop
@@ -67,7 +67,7 @@ public class DeserializerEmitter {
                     }
                     isFirst = false;
 
-                    method.addCode("$N = ", property.key());
+                    method.addCode("$N = ", property.name());
                     method.addCode(deserializerDispatcher.deser(property.type()));
                     method.addCode(";\n");
                 }
@@ -100,8 +100,8 @@ public class DeserializerEmitter {
         for (Property property : autoClass.getProperties()) {
             MethodSpec setter = MethodSpec.methodBuilder(Utils.getDefaultSetterName(property))
                     .returns(ClassName.bestGuess(deserializerName))
-                    .addParameter(TypeName.get(property.type()), property.key())
-                    .addStatement("this.$N = $N", Utils.getDefaultVarName(property.key()), property.key())
+                    .addParameter(TypeName.get(property.type()), property.name())
+                    .addStatement("this.$N = $N", Utils.getDefaultVarName(property.name()), property.name())
                     .addStatement("return this")
                     .build();
             specs.add(setter);
@@ -112,7 +112,7 @@ public class DeserializerEmitter {
     private static Iterable<FieldSpec> emitDefaultFields(AutoClass autoClass) {
         List<FieldSpec> fields = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
-            FieldSpec field = FieldSpec.builder(TypeName.get(property.type()), Utils.getDefaultVarName(property.key()), Modifier.PRIVATE)
+            FieldSpec field = FieldSpec.builder(TypeName.get(property.type()), Utils.getDefaultVarName(property.name()), Modifier.PRIVATE)
                     .build();
             fields.add(field);
         }

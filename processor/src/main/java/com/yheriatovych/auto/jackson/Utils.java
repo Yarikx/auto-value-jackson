@@ -12,7 +12,7 @@ public class Utils {
 
     @NotNull
     public static String getDefaultSetterName(Property property) {
-        return "set" + capitalizeFirst(getDefaultVarName(property.key()));
+        return "set" + capitalizeFirst(getDefaultVarName(property.name()));
     }
 
     public static String getDefaultVarName(String property) {

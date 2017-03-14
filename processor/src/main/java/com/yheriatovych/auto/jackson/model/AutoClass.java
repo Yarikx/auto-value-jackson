@@ -29,7 +29,7 @@ public class AutoClass {
         List<Property> properties = new ArrayList<>();
         for (String key : context.properties().keySet()) {
             ExecutableElement executableElement = context.properties().get(key);
-            Property property = Property.parse(key, executableElement);
+            Property property = Property.parse(key, executableElement, context.processingEnvironment());
             properties.add(property);
         }
 
@@ -40,7 +40,7 @@ public class AutoClass {
         String[] keys = new String[properties.size()];
         for (int i = 0; i < properties.size(); i++) {
             Property property = properties.get(i);
-            keys[i] = property.key();
+            keys[i] = property.name();
         }
         return keys;
     }

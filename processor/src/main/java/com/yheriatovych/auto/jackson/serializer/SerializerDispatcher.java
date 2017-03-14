@@ -12,22 +12,37 @@ import java.util.Set;
 
 class SerializerDispatcher {
     interface SerializerStrategy {
-        CodeBlock serialize(TypeMirror type, String propName);
+        CodeBlock serialize(Property property);
     }
 
     private SerializerStrategy[] strategies = new SerializerStrategy[]{
+            customSerializer(),
             primitive(TypeKind.BOOLEAN, "gen.writeBoolean(value.$N())"),
             primitiveNumber(TypeKind.BYTE, TypeKind.SHORT, TypeKind.INT),
             customClass(String.class, "gen.writeString(value.$N())"),
             fallback()
     };
 
+    private SerializerStrategy customSerializer() {
+        return new SerializerStrategy() {
+            @Override
+            public CodeBlock serialize(Property property) {
+                TypeMirror customSerializer = property.customSerializer();
+                if (customSerializer != null) {
+                    return CodeBlock.of("serializers.serializerInstance(null, $T.class)" +
+                            ".serialize(value.$N(), gen, serializers)", customSerializer, property.name());
+                }
+                return null;
+            }
+        };
+    }
+
     private SerializerStrategy customClass(final Class<?> clazz, final String code) {
         return new SerializerStrategy() {
             @Override
-            public CodeBlock serialize(TypeMirror type, String propName) {
-                if (MoreTypes.isTypeOf(clazz, type)) {
-                    return CodeBlock.of(code, propName);
+            public CodeBlock serialize(Property property) {
+                if (MoreTypes.isTypeOf(clazz, property.type())) {
+                    return CodeBlock.of(code, property.name());
                 }
                 return null;
             }
@@ -38,9 +53,9 @@ class SerializerDispatcher {
         final Set<TypeKind> kindSet = new HashSet<>(Arrays.asList(kinds));
         return new SerializerStrategy() {
             @Override
-            public CodeBlock serialize(TypeMirror type, String propName) {
-                if (kindSet.contains(type.getKind())) {
-                    return CodeBlock.of("gen.writeNumber(value.$N())", propName);
+            public CodeBlock serialize(Property property) {
+                if (kindSet.contains(property.type().getKind())) {
+                    return CodeBlock.of("gen.writeNumber(value.$N())", property.name());
                 }
                 return null;
             }
@@ -50,8 +65,8 @@ class SerializerDispatcher {
     private SerializerStrategy fallback() {
         return new SerializerStrategy() {
             @Override
-            public CodeBlock serialize(TypeMirror type, String propName) {
-                return CodeBlock.of("gen.writeObject(value.$N())", propName);
+            public CodeBlock serialize(Property property) {
+                return CodeBlock.of("gen.writeObject(value.$N())", property.name());
             }
         };
     }
@@ -59,9 +74,9 @@ class SerializerDispatcher {
     private SerializerStrategy primitive(final TypeKind kind, final String method) {
         return new SerializerStrategy() {
             @Override
-            public CodeBlock serialize(TypeMirror type, String propname) {
-                if (type.getKind() == kind) {
-                    return CodeBlock.of(method, propname);
+            public CodeBlock serialize(Property property) {
+                if (property.type().getKind() == kind) {
+                    return CodeBlock.of(method, property.name());
                 }
                 return null;
             }
@@ -70,7 +85,7 @@ class SerializerDispatcher {
 
     CodeBlock serialize(Property property) {
         for (SerializerStrategy strategy : strategies) {
-            CodeBlock block = strategy.serialize(property.type(), property.key());
+            CodeBlock block = strategy.serialize(property);
             if (block != null) {
                 return block;
             }

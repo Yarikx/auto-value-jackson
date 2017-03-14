@@ -37,7 +37,7 @@ public class ModuleEmitter {
         List<MethodSpec> specs = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
             String methodName = Utils.getDefaultSetterName(property);
-            String argName = property.key();
+            String argName = property.name();
             MethodSpec setter = MethodSpec.methodBuilder(methodName)
                     .returns(ClassName.bestGuess(moduleName))
                     .addParameter(TypeName.get(property.type()), argName)
