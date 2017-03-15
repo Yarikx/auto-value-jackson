@@ -42,7 +42,7 @@ class SerializerDispatcher {
             @Override
             public CodeBlock serialize(Property property) {
                 if (MoreTypes.isTypeOf(clazz, property.type())) {
-                    return CodeBlock.of(code, property.name());
+                    return CodeBlock.of(code, property.methodName());
                 }
                 return null;
             }
@@ -55,7 +55,7 @@ class SerializerDispatcher {
             @Override
             public CodeBlock serialize(Property property) {
                 if (kindSet.contains(property.type().getKind())) {
-                    return CodeBlock.of("gen.writeNumber(value.$N())", property.name());
+                    return CodeBlock.of("gen.writeNumber(value.$N())", property.methodName());
                 }
                 return null;
             }
@@ -66,7 +66,7 @@ class SerializerDispatcher {
         return new SerializerStrategy() {
             @Override
             public CodeBlock serialize(Property property) {
-                return CodeBlock.of("gen.writeObject(value.$N())", property.name());
+                return CodeBlock.of("gen.writeObject(value.$N())", property.methodName());
             }
         };
     }
@@ -76,7 +76,7 @@ class SerializerDispatcher {
             @Override
             public CodeBlock serialize(Property property) {
                 if (property.type().getKind() == kind) {
-                    return CodeBlock.of(method, property.name());
+                    return CodeBlock.of(method, property.methodName());
                 }
                 return null;
             }

@@ -23,6 +23,10 @@ public class Property {
         return key;
     }
 
+    public String methodName() {
+        return executableElement.getSimpleName().toString();
+    }
+
     public String jsonName() {
         return customJsonName != null ? customJsonName : key;
     }
