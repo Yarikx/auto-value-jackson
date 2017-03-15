@@ -9,6 +9,7 @@ Extension to generate serializers/deserializers for AutoValue classes.
 * [x] Support custom json names via `@JsonProperty`
 * [x] Polymorphic \[de\]serialization
 * [x] Ability to a add default values
-* [ ] Support for custom \[de\]serializers 
+* [x] Custom \[de\]serializers via `@JsonSerialize`/`@JsonDeserialize` 
 * [ ] Support `@JsonIgnore`
+* [ ] Resolve properties \[de\]serializers once
 * [ ] Classes with generic parameters
