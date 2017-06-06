@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
 import com.google.auto.value.extension.AutoValueExtension;
@@ -55,6 +56,7 @@ public class DeserializerEmitter {
         {
             //TODO check if token is field name
             method.addStatement("String fieldName = p.getCurrentName()");
+            method.beginControlFlow("try");
             method.addStatement("p.nextToken()");
 
             if (!autoClass.getProperties().isEmpty()) {
@@ -77,8 +79,12 @@ public class DeserializerEmitter {
             } else {
                 //TODO corner case handling
             }
-
-            method.addStatement("p.nextToken()");
+            method.nextControlFlow("catch ($T e)", Exception.class)
+                    .addStatement("throw $T.wrapWithPath(e, $T.class, fieldName)",
+                            JsonMappingException.class,
+                            autoClass.getTypeElement())
+                    .endControlFlow()
+                    .addStatement("p.nextToken()");
         }
         method.endControlFlow();
 
