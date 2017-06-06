@@ -22,13 +22,6 @@ class DeserializerDispatcher {
             primitive(TypeKind.LONG, "_parseLongPrimitive(p, ctxt)"),
             primitive(TypeKind.FLOAT, "_parseFloatPrimitive(p, ctxt)"),
             primitive(TypeKind.DOUBLE, "_parseDoublePrimitive(p, ctxt)"),
-            classStrategy(String.class, "_parseString(p, ctxt)"),
-            classStrategy(Short.class, "_parseShort(p, ctxt)"),
-            classStrategy(Integer.class, "_parseInteger(p, ctxt)"),
-            classStrategy(Long.class, "_parseLong(p, ctxt)"),
-            classStrategy(Float.class, "_parseFloat(p, ctxt)"),
-            classStrategy(Double.class, "_parseDouble(p, ctxt)"),
-            classStrategy(Date.class, "_parseDate(p, ctxt)"),
             fallbackStrategy()
     };
 
