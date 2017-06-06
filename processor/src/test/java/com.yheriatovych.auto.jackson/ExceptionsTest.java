@@ -3,6 +3,8 @@ package com.yheriatovych.auto.jackson;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.StringSerializer;
 import com.google.auto.value.AutoValue;
 import org.intellij.lang.annotations.Language;
 import org.junit.Before;
@@ -30,6 +32,7 @@ public class ExceptionsTest {
     @AutoValue
     protected static abstract class TestData {
         abstract String foo();
+        @JsonSerialize(using = StringSerializer.class)
         abstract int bar();
 
         static Module jacksonModule() {
@@ -41,7 +44,7 @@ public class ExceptionsTest {
     }
 
     @Test
-    public void exception() throws IOException {
+    public void throwExceptionWithPathOnDeserialize() throws IOException {
         @Language("JSON") String json = "{\"foo\":1, \"bar\": \"foo\"}";
         try {
             TestData data = mapper.readValue(json, TestData.class);
@@ -51,6 +54,22 @@ public class ExceptionsTest {
             assertEquals(1, references.size());
             JsonMappingException.Reference ref = references.get(0);
             assertEquals(TestData.class, ref.getFrom());
+            assertEquals("bar", ref.getFieldName());
+        }
+    }
+
+    @Test
+    public void throwExceptionWithPathOnSerialize() throws IOException {
+        TestData testData = TestData.create("foo", 42);
+
+        try {
+            mapper.writeValueAsString(testData);
+            fail("should throw JsonMappingException");
+        } catch (JsonMappingException jme) {
+            List<JsonMappingException.Reference> references = jme.getPath();
+            assertEquals(1, references.size());
+            JsonMappingException.Reference ref = references.get(0);
+            assertEquals(testData, ref.getFrom());
             assertEquals("bar", ref.getFieldName());
         }
     }

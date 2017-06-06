@@ -2,6 +2,7 @@ package com.yheriatovych.auto.jackson.serializer;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
@@ -28,11 +29,17 @@ public class SerializerEmitter {
                 .nextControlFlow("else")
                 .addStatement("gen.writeStartObject()")
                 .endControlFlow();
+        method.addStatement("String fieldName = null")
+                .beginControlFlow("try");
         for (Property property : autoClass.getProperties()) {
-            method.addStatement("gen.writeFieldName($S)", property.jsonName());
-            method.addCode(serializerDispatcher.serialize(property));
-            method.addCode(";\n");
+            method.addStatement("fieldName = $S", property.jsonName())
+                    .addStatement("gen.writeFieldName(fieldName)")
+                    .addCode(serializerDispatcher.serialize(property))
+                    .addCode(";\n");
         }
+        method.nextControlFlow("catch (Exception e)")
+                .addStatement("throw $T.wrapWithPath(e, value, fieldName)", JsonMappingException.class)
+                .endControlFlow();
         method.beginControlFlow("if (typeSer != null)")
                 .addStatement("typeSer.writeTypeSuffixForObject(value, gen)")
                 .nextControlFlow("else")
