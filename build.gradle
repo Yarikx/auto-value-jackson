@@ -18,7 +18,7 @@ buildscript {
 project.ext {
     bintrayUser = project.hasProperty('BINTRAY_USER') ? project.property('BINTRAY_USER') : ""
     bintrayKey = project.hasProperty('BINTRAY_KEY') ? project.property('BINTRAY_KEY') : ""
-    libVersion = '0.3.1'
+    libVersion = '0.3.2'
 }
 
 
