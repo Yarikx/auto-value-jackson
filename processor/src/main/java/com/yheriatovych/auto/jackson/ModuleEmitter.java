@@ -43,7 +43,7 @@ public class ModuleEmitter {
             String argName = property.name();
             MethodSpec setter = MethodSpec.methodBuilder(methodName)
                     .returns(ClassName.bestGuess(moduleName))
-                    .addParameter(TypeName.get(property.type()), argName)
+                    .addParameter(Utils.upperType(property.type()), argName)
                     .addStatement("deserializer.$N($N)", methodName, argName)
                     .addStatement("return this")
                     .build();

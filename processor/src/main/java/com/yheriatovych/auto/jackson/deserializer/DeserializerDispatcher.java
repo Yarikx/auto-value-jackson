@@ -1,6 +1,7 @@
 package com.yheriatovych.auto.jackson.deserializer;
 
 import com.squareup.javapoet.CodeBlock;
+import com.yheriatovych.auto.jackson.Utils;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 
@@ -33,7 +34,7 @@ class DeserializerDispatcher {
         return new DeserStrategy() {
             @Override
             public CodeBlock deser(Property property) {
-                return CodeBlock.of("$NDeserializer.deserialize(p, ctxt)", property.name());
+                return CodeBlock.of("($T) $NDeserializer.deserialize(p, ctxt)", Utils.upperType(property.type()), property.name());
             }
         };
     }

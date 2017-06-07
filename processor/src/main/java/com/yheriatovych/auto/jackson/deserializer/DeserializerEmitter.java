@@ -58,7 +58,7 @@ public class DeserializerEmitter {
         for (Property property : autoClass.getProperties()) {
             ExecutableElement executableElement = property.method();
             TypeMirror returnType = executableElement.getReturnType();
-            method.addStatement("$T $N = $L", returnType, property.name(), Utils.getDefaultVarName(property.name()));
+            method.addStatement("$T $N = $L", Utils.upperType(returnType), property.name(), Utils.getDefaultVarName(property.name()));
         }
 
         //while loop
@@ -128,19 +128,22 @@ public class DeserializerEmitter {
                 builder.addCode("$T $NType = ", JavaType.class, property.name());
                 builder.addCode(constructType(property.type(), autoClass, env.getTypeUtils()));
                 builder.addStatement("");
-                builder.addStatement("this.contentDeserializer = ctxt.findNonContextualValueDeserializer($NType)", property.name());
+                builder.addStatement("this.$NDeserializer = ctxt.findNonContextualValueDeserializer($NType)",
+                        property.name(),
+                        property.name());
             }
         }
 
-        return builder
-                .build();
+        return builder.build();
     }
 
     private static List<FieldSpec> emitPropertyDeserializers(AutoClass autoClass) {
         List<FieldSpec> fields = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
             if (!(property.type() instanceof PrimitiveType)) {
-                fields.add(FieldSpec.builder(JsonDeserializer.class, property.name() + "Deserializer", Modifier.PRIVATE).build());
+                fields.add(FieldSpec.builder(
+                        JsonDeserializer.class
+                        , property.name() + "Deserializer", Modifier.PRIVATE).build());
             }
         }
         return fields;
@@ -213,7 +216,7 @@ public class DeserializerEmitter {
         for (Property property : autoClass.getProperties()) {
             MethodSpec setter = MethodSpec.methodBuilder(Utils.getDefaultSetterName(property))
                     .returns(ClassName.bestGuess(deserializerName))
-                    .addParameter(TypeName.get(property.type()), property.name())
+                    .addParameter(Utils.upperType(property.type()), property.name())
                     .addStatement("this.$N = $N", Utils.getDefaultVarName(property.name()), property.name())
                     .addStatement("return this")
                     .build();
@@ -225,7 +228,7 @@ public class DeserializerEmitter {
     private static Iterable<FieldSpec> emitDefaultFields(AutoClass autoClass) {
         List<FieldSpec> fields = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
-            FieldSpec field = FieldSpec.builder(TypeName.get(property.type()), Utils.getDefaultVarName(property.name()), Modifier.PRIVATE)
+            FieldSpec field = FieldSpec.builder(Utils.upperType(property.type()), Utils.getDefaultVarName(property.name()), Modifier.PRIVATE)
                     .build();
             fields.add(field);
         }

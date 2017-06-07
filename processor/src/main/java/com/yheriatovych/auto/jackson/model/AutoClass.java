@@ -2,7 +2,10 @@ package com.yheriatovych.auto.jackson.model;
 
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.extension.AutoValueExtension;
+import com.squareup.javapoet.TypeName;
+import com.yheriatovych.auto.jackson.Utils;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
