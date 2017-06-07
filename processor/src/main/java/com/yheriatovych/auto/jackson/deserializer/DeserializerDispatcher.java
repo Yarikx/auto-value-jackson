@@ -3,6 +3,7 @@ package com.yheriatovych.auto.jackson.deserializer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.auto.common.MoreTypes;
 import com.squareup.javapoet.CodeBlock;
+import com.yheriatovych.auto.jackson.model.AutoClass;
 
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -10,6 +11,13 @@ import javax.lang.model.type.TypeMirror;
 import java.util.Date;
 
 class DeserializerDispatcher {
+    private final AutoClass autoClass;
+
+    public DeserializerDispatcher(AutoClass autoClass) {
+
+        this.autoClass = autoClass;
+    }
+
     interface DeserStrategy {
         CodeBlock deser(TypeMirror type);
     }
@@ -24,18 +32,6 @@ class DeserializerDispatcher {
             primitive(TypeKind.DOUBLE, "_parseDoublePrimitive(p, ctxt)"),
             fallbackStrategy()
     };
-
-    private DeserStrategy classStrategy(final Class<?> clazz, final String method) {
-        return new DeserStrategy() {
-            @Override
-            public CodeBlock deser(TypeMirror type) {
-                if(type.getKind() == TypeKind.DECLARED && MoreTypes.isTypeOf(clazz, type)) {
-                    return CodeBlock.of(method);
-                }
-                return null;
-            }
-        };
-    }
 
     private DeserStrategy fallbackStrategy() {
         return new DeserStrategy() {

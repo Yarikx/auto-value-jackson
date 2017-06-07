@@ -4,19 +4,26 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
+import com.google.auto.common.MoreTypes;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.squareup.javapoet.*;
 import com.yheriatovych.auto.jackson.Utils;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.type.TypeMirror;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.*;
+import javax.lang.model.util.Types;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,15 +34,12 @@ public class DeserializerEmitter {
         ProcessingEnvironment env = context.processingEnvironment();
         TypeMirror clazz = env.getTypeUtils().erasure(autoClass.getType());
 
-        DeserializerDispatcher deserializerDispatcher = new DeserializerDispatcher();
+        DeserializerDispatcher deserializerDispatcher = new DeserializerDispatcher(autoClass);
         ParameterizedTypeName deserializerType = ParameterizedTypeName.get(
                 ClassName.get(StdDeserializer.class),
                 ClassName.get(autoClass.getTypeElement())
         );
 
-        MethodSpec constructor = MethodSpec.constructorBuilder()
-                .addStatement("super($T.class)", clazz)
-                .build();
         MethodSpec.Builder method = MethodSpec.methodBuilder("deserialize")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(JsonParser.class, "p")
@@ -98,11 +102,93 @@ public class DeserializerEmitter {
         return TypeSpec.classBuilder(deserializerName)
                 .superclass(deserializerType)
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
-                .addMethod(constructor)
+                .addFields(emitTypeParamFields(autoClass))
+                .addFields(emitPrpertyTypesFields(autoClass))
+                .addMethod(emitConstructor(autoClass, clazz, env))
                 .addFields(emitDefaultFields(autoClass))
                 .addMethods(emitDefaultSetters(autoClass, deserializerName))
                 .addMethod(method.build())
                 .build();
+    }
+
+    private static List<FieldSpec> emitPrpertyTypesFields(AutoClass autoClass) {
+        List<FieldSpec> fields = new ArrayList<>();
+        for (Property property : autoClass.getProperties()) {
+            if (!(property.type() instanceof PrimitiveType)) {
+                fields.add(FieldSpec.builder(JavaType.class, property.name() + "Type", Modifier.PRIVATE, Modifier.FINAL).build());
+            }
+        }
+        return fields;
+    }
+
+    @NotNull
+    private static MethodSpec emitConstructor(AutoClass autoClass, TypeMirror clazz, ProcessingEnvironment env) {
+        MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder();
+        for (TypeParameterElement parameterElement : autoClass.getTypeParams()) {
+            constructorBuilder.addParameter(JavaType.class, "type" + parameterElement.getSimpleName());
+        }
+        constructorBuilder.addStatement("super($T.class)", clazz);
+        for (TypeParameterElement parameterElement : autoClass.getTypeParams()) {
+            Name name = parameterElement.getSimpleName();
+            constructorBuilder.addStatement("this.typeParam$N = type$N", name, name);
+        }
+
+        constructorBuilder.addStatement("$T tf = $T.defaultInstance()", TypeFactory.class, TypeFactory.class);
+        for (Property property : autoClass.getProperties()) {
+            if (!(property.type() instanceof PrimitiveType)) {
+                constructorBuilder.addCode("this.$NType = ", property.name());
+                constructorBuilder.addCode(constructType(property.type(), autoClass, env.getTypeUtils()));
+                constructorBuilder.addStatement("");
+            }
+        }
+        return constructorBuilder.build();
+    }
+
+    private static CodeBlock constructType(TypeMirror type, AutoClass autoClass, Types types) {
+        if (type.getKind() == TypeKind.ARRAY) {
+            ArrayType arrayType = MoreTypes.asArray(type);
+            TypeMirror componentType = arrayType.getComponentType();
+            return CodeBlock.builder()
+                    .add("tf.constructArrayType(")
+                    .add(constructType(componentType, autoClass, types))
+                    .add(")")
+                    .build();
+        } else if (type.getKind() == TypeKind.DECLARED) {
+            DeclaredType declaredType = MoreTypes.asDeclared(type);
+            List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+            if(typeArguments.isEmpty()) {
+                return CodeBlock.of("tf.constructType($T.class)", type);
+            } else {
+                CodeBlock.Builder builder = CodeBlock.builder()
+                        .add("tf.constructParametricType($T.class", types.erasure(declaredType));
+                for (TypeMirror argument : typeArguments) {
+                    builder.add(", ")
+                            .add(constructType(argument, autoClass, types));
+                }
+                return builder
+                        .add(")")
+                        .build();
+            }
+        } else if (type.getKind() == TypeKind.TYPEVAR) {
+            TypeVariable typeVariable = MoreTypes.asTypeVariable(type);
+            for (TypeParameterElement typeParam : autoClass.getTypeParams()) {
+                if(typeParam.equals(typeVariable.asElement())) {
+                    return CodeBlock.of("typeParam"+typeParam.getSimpleName());
+                }
+            }
+            return CodeBlock.of("UNKNOWN");
+        } else {
+            return CodeBlock.of("tf.constructType($T.class)", type);
+        }
+    }
+
+    private static List<FieldSpec> emitTypeParamFields(AutoClass autoClass) {
+        List<FieldSpec> fields = new ArrayList<>();
+        for (TypeParameterElement parameterElement : autoClass.getTypeParams()) {
+            fields.add(FieldSpec.builder(JavaType.class, "typeParam" + parameterElement.getSimpleName(), Modifier.PRIVATE, Modifier.FINAL)
+                    .build());
+        }
+        return fields;
     }
 
     private static Iterable<MethodSpec> emitDefaultSetters(AutoClass autoClass, String deserializerName) {

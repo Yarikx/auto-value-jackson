@@ -33,6 +33,9 @@ public class AutoClass {
         return properties;
     }
 
+    public List<? extends TypeParameterElement> getTypeParams() {
+        return typeParams;
+    }
 
     public static AutoClass parse(AutoValueExtension.Context context) {
         List<Property> properties = new ArrayList<>();
@@ -52,5 +55,9 @@ public class AutoClass {
             keys[i] = property.name();
         }
         return keys;
+    }
+
+    public boolean isGeneric() {
+        return !typeParams.isEmpty();
     }
 }
