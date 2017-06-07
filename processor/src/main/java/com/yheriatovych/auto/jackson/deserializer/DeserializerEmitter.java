@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.deser.ResolvableDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.gabrielittner.auto.value.util.AutoValueUtil;
@@ -101,21 +103,44 @@ public class DeserializerEmitter {
 
         return TypeSpec.classBuilder(deserializerName)
                 .superclass(deserializerType)
+                .addSuperinterface(ResolvableDeserializer.class)
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
                 .addFields(emitTypeParamFields(autoClass))
-                .addFields(emitPrpertyTypesFields(autoClass))
+                .addFields(emitPropertyDeserializers(autoClass))
                 .addMethod(emitConstructor(autoClass, clazz, env))
+                .addMethod(emitResolveMethod(autoClass, env))
                 .addFields(emitDefaultFields(autoClass))
                 .addMethods(emitDefaultSetters(autoClass, deserializerName))
                 .addMethod(method.build())
                 .build();
     }
 
-    private static List<FieldSpec> emitPrpertyTypesFields(AutoClass autoClass) {
+    private static MethodSpec emitResolveMethod(AutoClass autoClass, ProcessingEnvironment env) {
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("resolve")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(DeserializationContext.class, "ctxt")
+                .addException(JsonMappingException.class)
+                .addStatement("$T tf = ctxt.getTypeFactory()", TypeFactory.class);
+
+        for (Property property : autoClass.getProperties()) {
+            if (!(property.type() instanceof PrimitiveType)) {
+                builder.addCode("$T $NType = ", JavaType.class, property.name());
+                builder.addCode(constructType(property.type(), autoClass, env.getTypeUtils()));
+                builder.addStatement("");
+                builder.addStatement("this.contentDeserializer = ctxt.findNonContextualValueDeserializer($NType)", property.name());
+            }
+        }
+
+        return builder
+                .build();
+    }
+
+    private static List<FieldSpec> emitPropertyDeserializers(AutoClass autoClass) {
         List<FieldSpec> fields = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
             if (!(property.type() instanceof PrimitiveType)) {
-                fields.add(FieldSpec.builder(JavaType.class, property.name() + "Type", Modifier.PRIVATE, Modifier.FINAL).build());
+                fields.add(FieldSpec.builder(JsonDeserializer.class, property.name() + "Deserializer", Modifier.PRIVATE).build());
             }
         }
         return fields;
@@ -133,14 +158,6 @@ public class DeserializerEmitter {
             constructorBuilder.addStatement("this.typeParam$N = type$N", name, name);
         }
 
-        constructorBuilder.addStatement("$T tf = $T.defaultInstance()", TypeFactory.class, TypeFactory.class);
-        for (Property property : autoClass.getProperties()) {
-            if (!(property.type() instanceof PrimitiveType)) {
-                constructorBuilder.addCode("this.$NType = ", property.name());
-                constructorBuilder.addCode(constructType(property.type(), autoClass, env.getTypeUtils()));
-                constructorBuilder.addStatement("");
-            }
-        }
         return constructorBuilder.build();
     }
 

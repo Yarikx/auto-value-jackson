@@ -33,7 +33,7 @@ class DeserializerDispatcher {
         return new DeserStrategy() {
             @Override
             public CodeBlock deser(Property property) {
-                return CodeBlock.of("p.readValueAs($N)", property.name() + "Type");
+                return CodeBlock.of("$NDeserializer.deserialize(p, ctxt)", property.name());
             }
         };
     }
