@@ -10,22 +10,27 @@ import com.squareup.javapoet.*;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import java.io.IOException;
 
 public class SerializerEmitter {
-    public static TypeSpec emitSerializer(AutoClass autoClass, String serializerName) {
+    public static TypeSpec emitSerializer(AutoClass autoClass, String serializerName, ProcessingEnvironment env) {
         SerializerDispatcher serializerDispatcher = new SerializerDispatcher();
+        TypeElement typeElement = autoClass.getTypeElement();
+        TypeMirror clazz = env.getTypeUtils().erasure(autoClass.getType());
         MethodSpec.Builder method = MethodSpec.methodBuilder("serializeWithType")
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(ClassName.get(autoClass.getTypeElement()), "value")
+                .addParameter(ClassName.get(typeElement), "value")
                 .addParameter(JsonGenerator.class, "gen")
                 .addParameter(SerializerProvider.class, "serializers")
                 .addParameter(TypeSerializer.class, "typeSer")
                 .addException(IOException.class);
 
         method.beginControlFlow("if (typeSer != null)")
-                .addStatement("typeSer.writeTypePrefixForObject(value, gen, $T.class)", autoClass.getTypeElement())
+                .addStatement("typeSer.writeTypePrefixForObject(value, gen, $T.class)", clazz)
                 .nextControlFlow("else")
                 .addStatement("gen.writeStartObject()")
                 .endControlFlow();
@@ -48,7 +53,7 @@ public class SerializerEmitter {
 
         MethodSpec.Builder simpleSerialize = MethodSpec.methodBuilder("serialize")
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(ClassName.get(autoClass.getTypeElement()), "value")
+                .addParameter(ClassName.get(typeElement), "value")
                 .addParameter(JsonGenerator.class, "gen")
                 .addParameter(SerializerProvider.class, "serializers")
                 .addException(IOException.class)
@@ -58,7 +63,7 @@ public class SerializerEmitter {
         return TypeSpec.classBuilder(serializerName)
                 .superclass(ParameterizedTypeName.get(
                         ClassName.get(JsonSerializer.class),
-                        ClassName.get(autoClass.getTypeElement())
+                        ClassName.get(typeElement)
                 ))
                 .addModifiers(Modifier.STATIC, Modifier.FINAL)
                 .addMethod(method.build())

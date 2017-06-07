@@ -5,14 +5,17 @@ import com.squareup.javapoet.*;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ModuleEmitter {
-    static TypeSpec emitModule(AutoClass autoClass, String serializerName, String deserializerName, String moduleName) {
+    static TypeSpec emitModule(AutoClass autoClass, String serializerName, String deserializerName, String moduleName, ProcessingEnvironment env) {
         TypeElement type = autoClass.getTypeElement();
+        TypeMirror clazz = env.getTypeUtils().erasure(autoClass.getType());
 
         ClassName deserializerClass = ClassName.bestGuess(deserializerName);
         FieldSpec deserializerField = FieldSpec.builder(deserializerClass, "deserializer", Modifier.PRIVATE, Modifier.FINAL)
@@ -21,8 +24,8 @@ public class ModuleEmitter {
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addStatement("super($S)", type.getSimpleName())
                 .addStatement("deserializer = new $T()", deserializerClass)
-                .addStatement("addSerializer($T.class, new $N())", type, serializerName)
-                .addStatement("addDeserializer($T.class, deserializer)",type)
+                .addStatement("addSerializer($T.class, new $N())", clazz, serializerName)
+                .addStatement("addDeserializer($T.class, deserializer)",clazz)
                 .build();
         return TypeSpec.classBuilder(moduleName)
                 .superclass(SimpleModule.class)

@@ -44,9 +44,9 @@ public class JacksonExtension extends AutoValueExtension {
         AutoClass autoClass = AutoClass.parse(context);
 
         TypeSpec typeSpec = builder
-                .addType(SerializerEmitter.emitSerializer(autoClass, serializerName))
+                .addType(SerializerEmitter.emitSerializer(autoClass, serializerName, context.processingEnvironment()))
                 .addType(DeserializerEmitter.emitDeserializer(autoClass, context, deserializerName))
-                .addType(ModuleEmitter.emitModule(autoClass, serializerName, deserializerName, moduleName))
+                .addType(ModuleEmitter.emitModule(autoClass, serializerName, deserializerName, moduleName, context.processingEnvironment()))
                 .build();
         return JavaFile.builder(context.packageName(), typeSpec)
                 .skipJavaLangImports(true)

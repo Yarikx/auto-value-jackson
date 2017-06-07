@@ -13,6 +13,7 @@ import com.yheriatovych.auto.jackson.Utils;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeMirror;
@@ -23,6 +24,9 @@ import java.util.List;
 public class DeserializerEmitter {
 
     public static TypeSpec emitDeserializer(AutoClass autoClass, AutoValueExtension.Context context, String deserializerName) {
+        ProcessingEnvironment env = context.processingEnvironment();
+        TypeMirror clazz = env.getTypeUtils().erasure(autoClass.getType());
+
         DeserializerDispatcher deserializerDispatcher = new DeserializerDispatcher();
         ParameterizedTypeName deserializerType = ParameterizedTypeName.get(
                 ClassName.get(StdDeserializer.class),
@@ -30,7 +34,7 @@ public class DeserializerEmitter {
         );
 
         MethodSpec constructor = MethodSpec.constructorBuilder()
-                .addStatement("super($T.class)", autoClass.getTypeElement())
+                .addStatement("super($T.class)", clazz)
                 .build();
         MethodSpec.Builder method = MethodSpec.methodBuilder("deserialize")
                 .addModifiers(Modifier.PUBLIC)
@@ -82,7 +86,7 @@ public class DeserializerEmitter {
             method.nextControlFlow("catch ($T e)", Exception.class)
                     .addStatement("throw $T.wrapWithPath(e, $T.class, fieldName)",
                             JsonMappingException.class,
-                            autoClass.getTypeElement())
+                            clazz)
                     .endControlFlow()
                     .addStatement("p.nextToken()");
         }

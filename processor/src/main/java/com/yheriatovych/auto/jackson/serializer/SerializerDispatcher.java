@@ -41,7 +41,8 @@ class SerializerDispatcher {
         return new SerializerStrategy() {
             @Override
             public CodeBlock serialize(Property property) {
-                if (MoreTypes.isTypeOf(clazz, property.type())) {
+                TypeMirror type = property.type();
+                if (type.getKind() == TypeKind.DECLARED && MoreTypes.isTypeOf(clazz, type)) {
                     return CodeBlock.of(code, property.methodName());
                 }
                 return null;
