@@ -1,14 +1,10 @@
 package com.yheriatovych.auto.jackson.deserializer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.auto.common.MoreTypes;
 import com.squareup.javapoet.CodeBlock;
 import com.yheriatovych.auto.jackson.model.AutoClass;
+import com.yheriatovych.auto.jackson.model.Property;
 
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-import java.util.Date;
 
 class DeserializerDispatcher {
     private final AutoClass autoClass;
@@ -19,7 +15,7 @@ class DeserializerDispatcher {
     }
 
     interface DeserStrategy {
-        CodeBlock deser(TypeMirror type);
+        CodeBlock deser(Property property);
     }
 
     private final DeserStrategy[] strategies = new DeserStrategy[]{
@@ -36,15 +32,8 @@ class DeserializerDispatcher {
     private DeserStrategy fallbackStrategy() {
         return new DeserStrategy() {
             @Override
-            public CodeBlock deser(TypeMirror type) {
-                if (type.getKind() == TypeKind.DECLARED) {
-                    DeclaredType declaredType = MoreTypes.asDeclared(type);
-                    if (declaredType.getTypeArguments().size() > 0) {
-                        return CodeBlock.of("p.readValueAs(new $T<$T>(){})", TypeReference.class, type);
-                    }
-                }
-
-                return CodeBlock.of("p.readValueAs($T.class)", type);
+            public CodeBlock deser(Property property) {
+                return CodeBlock.of("p.readValueAs($N)", property.name() + "Type");
             }
         };
     }
@@ -52,8 +41,8 @@ class DeserializerDispatcher {
     private DeserStrategy primitive(final TypeKind kind, final String method) {
         return new DeserStrategy() {
             @Override
-            public CodeBlock deser(TypeMirror type) {
-                if (type.getKind() == kind) {
+            public CodeBlock deser(Property property) {
+                if (property.type().getKind() == kind) {
                     return CodeBlock.of(method);
                 }
                 return null;
@@ -61,7 +50,7 @@ class DeserializerDispatcher {
         };
     }
 
-    CodeBlock deser(TypeMirror type) {
+    CodeBlock deser(Property type) {
         for (DeserStrategy strategy : strategies) {
             CodeBlock block = strategy.deser(type);
             if (block != null) {

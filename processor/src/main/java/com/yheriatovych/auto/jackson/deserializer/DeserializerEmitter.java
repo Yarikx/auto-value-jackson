@@ -78,7 +78,7 @@ public class DeserializerEmitter {
                     isFirst = false;
 
                     method.addCode("$N = ", property.name());
-                    method.addCode(deserializerDispatcher.deser(property.type()));
+                    method.addCode(deserializerDispatcher.deser(property));
                     method.addCode(";\n");
                 }
                 method.nextControlFlow("else")
