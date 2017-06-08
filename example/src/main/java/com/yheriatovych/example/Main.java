@@ -1,10 +1,13 @@
 package com.yheriatovych.example;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.intellij.lang.annotations.Language;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
 public class Main {
@@ -26,5 +29,11 @@ public class Main {
         System.out.println(json);
         Foobar readed = mapper.readValue(json, Foobar.class);
         System.out.println(readed);
+
+        mapper.registerModule(Container.module());
+        @Language("JSON") String json2 = "{\"content\": [\"foobar\"]}";
+        Object value = mapper.readValue(json2, new TypeReference<Container<String>>(){});
+        System.out.println(value);
+        System.out.println(value.equals(Container.create(Collections.singletonList("foobar"))));
     }
 }
