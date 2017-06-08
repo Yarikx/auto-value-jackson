@@ -16,6 +16,8 @@ import javax.lang.model.type.TypeMirror;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.yheriatovych.auto.jackson.Utils.*;
+
 public class ModuleEmitter {
     static TypeSpec emitModule(AutoClass autoClass, String serializerName, String deserializerName, String moduleName, ProcessingEnvironment env) {
         TypeElement type = autoClass.getTypeElement();
@@ -46,13 +48,17 @@ public class ModuleEmitter {
                 : CodeBlock.of("");
         CodeBlock.Builder typeArgs = CodeBlock.builder();
         for (int i = 0; i < autoClass.getTypeParams().size(); i++) {
-            if(i != 0){
+            if (i != 0) {
                 typeArgs.add(", ");
             }
             typeArgs.add(CodeBlock.of("type.containedType($L)", i));
         }
         deserializatoinBlock.beginControlFlow("if ($T.class.isAssignableFrom(type.getRawClass())$L)", env.getTypeUtils().erasure(autoClass.getType()), typeParamsCheck)
-                .addStatement("return new $T($L)", deserializerClass, typeArgs.build())
+                .addStatement("$T deser = new $T($L)", deserializerClass, deserializerClass, typeArgs.build());
+        for (Property property : autoClass.getProperties()) {
+            deserializatoinBlock.addStatement("deser.$N($N)", getDefaultSetterName(property), getDefaultVarName(property.name()));
+        }
+        deserializatoinBlock.addStatement("return deser")
                 .endControlFlow();
 
         MethodSpec.Builder builder = MethodSpec.methodBuilder("findBeanDeserializer")
@@ -76,7 +82,7 @@ public class ModuleEmitter {
     private static List<FieldSpec> emitDefaultValues(AutoClass autoClass) {
         List<FieldSpec> fieldSpecs = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
-            fieldSpecs.add(FieldSpec.builder(Utils.upperType(property.type()), Utils.getDefaultVarName(property.name()), Modifier.PRIVATE).build());
+            fieldSpecs.add(FieldSpec.builder(upperType(property.type()), getDefaultVarName(property.name()), Modifier.PRIVATE).build());
         }
         return fieldSpecs;
     }
@@ -84,12 +90,12 @@ public class ModuleEmitter {
     private static Iterable<MethodSpec> emitDefaultSetters(AutoClass autoClass, String moduleName) {
         List<MethodSpec> specs = new ArrayList<>();
         for (Property property : autoClass.getProperties()) {
-            String methodName = Utils.getDefaultSetterName(property);
+            String methodName = getDefaultSetterName(property);
             String argName = property.name();
             MethodSpec setter = MethodSpec.methodBuilder(methodName)
                     .returns(ClassName.bestGuess(moduleName))
-                    .addParameter(Utils.upperType(property.type()), argName)
-                    .addStatement("this.$N = $N", Utils.getDefaultVarName(property.name()), argName)
+                    .addParameter(upperType(property.type()), argName)
+                    .addStatement("this.$N = $N", getDefaultVarName(property.name()), argName)
                     .addStatement("return this")
                     .build();
             specs.add(setter);
