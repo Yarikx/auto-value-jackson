@@ -1,5 +1,6 @@
 package com.yheriatovych.example;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,6 +24,11 @@ public abstract class Foobar {
     public abstract List<String> items();
     public abstract boolean wtf();
     public abstract Date timestamp();
+
+    @JsonCreator
+    public static Foobar create(String foo, int bar, List<String> items, boolean wtf, Date timestamp) {
+        return new AutoValue_Foobar(foo, bar, items, wtf, timestamp);
+    }
 
     public static TypeAdapter<Foobar> typeAdapter(Gson gson) {
         return new AutoValue_Foobar.GsonTypeAdapter(gson);

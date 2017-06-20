@@ -99,7 +99,19 @@ public class DeserializerEmitter {
         method.endControlFlow();
 
         method.addCode("return ");
-        method.addCode(AutoValueUtil.newFinalClassConstructorCall(context, autoClass.allKeys()));
+        ExecutableElement jsonCreator = autoClass.getJsonCreator();
+        if (jsonCreator != null) {
+            method.addCode("$T.$N(", autoClass.getType(), autoClass.getJsonCreator().getSimpleName());
+            List<Property> properties = autoClass.getProperties();
+            for (int i = 0; i < properties.size(); i++) {
+                Property property = properties.get(i);
+                if (i != 0) method.addCode(", ");
+                method.addCode("$N", property.name());
+            }
+            method.addStatement(")");
+        } else {
+            method.addCode(AutoValueUtil.newFinalClassConstructorCall(context, autoClass.allKeys()));
+        }
 
         return TypeSpec.classBuilder(deserializerName)
                 .superclass(deserializerType)
@@ -176,7 +188,7 @@ public class DeserializerEmitter {
         } else if (type.getKind() == TypeKind.DECLARED) {
             DeclaredType declaredType = MoreTypes.asDeclared(type);
             List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-            if(typeArguments.isEmpty()) {
+            if (typeArguments.isEmpty()) {
                 return CodeBlock.of("tf.constructType($T.class)", type);
             } else {
                 CodeBlock.Builder builder = CodeBlock.builder()
@@ -192,8 +204,8 @@ public class DeserializerEmitter {
         } else if (type.getKind() == TypeKind.TYPEVAR) {
             TypeVariable typeVariable = MoreTypes.asTypeVariable(type);
             for (TypeParameterElement typeParam : autoClass.getTypeParams()) {
-                if(typeParam.equals(typeVariable.asElement())) {
-                    return CodeBlock.of("typeParam"+typeParam.getSimpleName());
+                if (typeParam.equals(typeVariable.asElement())) {
+                    return CodeBlock.of("typeParam" + typeParam.getSimpleName());
                 }
             }
             return CodeBlock.of("UNKNOWN");
