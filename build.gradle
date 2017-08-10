@@ -1,6 +1,5 @@
 group 'com.yheriatovych'
-version '1.0-SNAPSHOT'
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
+version '0.5.0'
 
 buildscript {
     repositories {
@@ -18,7 +17,7 @@ buildscript {
 project.ext {
     bintrayUser = project.hasProperty('BINTRAY_USER') ? project.property('BINTRAY_USER') : ""
     bintrayKey = project.hasProperty('BINTRAY_KEY') ? project.property('BINTRAY_KEY') : ""
-    libVersion = '0.3.2'
+    libVersion = version
 }
 
 
