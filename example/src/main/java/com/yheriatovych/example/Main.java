@@ -2,7 +2,6 @@ package com.yheriatovych.example;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.intellij.lang.annotations.Language;
 
 import java.io.IOException;
