@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.auto.value.AutoValue;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,6 +25,7 @@ public class SimpleTest {
 
     @AutoValue
     protected static abstract class TestData {
+        @Nullable
         abstract String foo();
         abstract int bar();
 
@@ -43,9 +45,23 @@ public class SimpleTest {
     }
 
     @Test
-    public void DeserializeSimpleObject() throws IOException {
+    public void deserializeSimpleObject() throws IOException {
         TestData expected = TestData.create("test", 4);
         String json = "{\"foo\":\"test\",\"bar\":4}";
+        assertEquals(expected, mapper.readValue(json, TestData.class));
+    }
+
+    @Test
+    public void deserializeSimpleObjectWithNulls() throws IOException {
+        TestData expected = TestData.create(null, 4);
+        String json = "{\"foo\":null,\"bar\":4}";
+        assertEquals(expected, mapper.readValue(json, TestData.class));
+    }
+
+    @Test
+    public void deserializeSimpleObjectWithMissingValues() throws IOException {
+        TestData expected = TestData.create(null, 0);
+        String json = "{}";
         assertEquals(expected, mapper.readValue(json, TestData.class));
     }
 

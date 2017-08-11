@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleDeserializers;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.squareup.javapoet.*;
-import com.sun.tools.javac.jvm.Code;
 import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 import org.jetbrains.annotations.NotNull;

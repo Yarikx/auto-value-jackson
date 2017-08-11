@@ -1,5 +1,6 @@
 package com.yheriatovych.auto.jackson.deserializer;
 
+import com.fasterxml.jackson.core.JsonToken;
 import com.squareup.javapoet.CodeBlock;
 import com.yheriatovych.auto.jackson.Utils;
 import com.yheriatovych.auto.jackson.model.AutoClass;
@@ -34,7 +35,11 @@ class DeserializerDispatcher {
         return new DeserStrategy() {
             @Override
             public CodeBlock deser(Property property) {
-                return CodeBlock.of("($T) $NDeserializer.deserialize(p, ctxt)", Utils.upperType(property.type()), property.name());
+                return CodeBlock.of("($T) " +
+                                "(p.getCurrentToken() == $T.VALUE_NULL" +
+                                " ? $NDeserializer.getNullValue(ctxt)" +
+                                " : $NDeserializer.deserialize(p, ctxt))",
+                        Utils.upperType(property.type()), JsonToken.class, property.name(), property.name());
             }
         };
     }
