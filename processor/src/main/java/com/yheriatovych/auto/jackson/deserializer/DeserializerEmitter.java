@@ -140,7 +140,7 @@ public class DeserializerEmitter {
                 builder.addCode("$T $NType = ", JavaType.class, property.name());
                 builder.addCode(constructType(property.type(), autoClass, env.getTypeUtils()));
                 builder.addStatement("");
-                builder.addStatement("this.$NDeserializer = ctxt.findNonContextualValueDeserializer($NType)",
+                builder.addStatement("this.$NDeserializer = ctxt.findRootValueDeserializer($NType)",
                         property.name(),
                         property.name());
             }
