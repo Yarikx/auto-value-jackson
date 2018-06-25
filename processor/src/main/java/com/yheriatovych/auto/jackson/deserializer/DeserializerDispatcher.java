@@ -7,12 +7,12 @@ import com.yheriatovych.auto.jackson.model.AutoClass;
 import com.yheriatovych.auto.jackson.model.Property;
 
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 
 class DeserializerDispatcher {
     private final AutoClass autoClass;
 
     public DeserializerDispatcher(AutoClass autoClass) {
-
         this.autoClass = autoClass;
     }
 
@@ -21,6 +21,7 @@ class DeserializerDispatcher {
     }
 
     private final DeserStrategy[] strategies = new DeserStrategy[]{
+            customDeserializer(),
             primitive(TypeKind.BOOLEAN, "_parseBooleanPrimitive(p, ctxt)"),
             primitive(TypeKind.BYTE, "_parseBytePrimitive(p, ctxt)"),
             primitive(TypeKind.SHORT, "_parseShortPrimitive(p, ctxt)"),
@@ -30,6 +31,19 @@ class DeserializerDispatcher {
             primitive(TypeKind.DOUBLE, "_parseDoublePrimitive(p, ctxt)"),
             fallbackStrategy()
     };
+
+    private DeserStrategy customDeserializer() {
+        return new DeserStrategy() {
+            @Override
+            public CodeBlock deser(Property property) {
+                TypeMirror customDeserializer = property.customDeserializer();
+                if (customDeserializer != null) {
+                    return CodeBlock.of("($T) ctxt.deserializerInstance(null, $T.class).deserialize(p, ctxt)", property.type(), customDeserializer);
+                }
+                return null;
+            }
+        };
+    }
 
     private DeserStrategy fallbackStrategy() {
         return new DeserStrategy() {
